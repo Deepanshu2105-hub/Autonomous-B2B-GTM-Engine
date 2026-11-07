@@ -23,3 +23,21 @@ Visualizes pipeline velocity over time.
 To run locally:
 pip install -r requirements.txt
 streamlit run app.py
+
+
+🔄 Legacy Data Migration Tool (V1 → V2)
+To ensure a smooth transition from the manual V1 tracker to the fully autonomous V2 JSON-based architecture, I engineered a Python-based data migration pipeline using pandas.
+
+Features:
+
+Dynamically standardizes legacy column headers.
+
+Implements case-insensitive deduplication to prevent duplicate outreach.
+
+Scrubs incomplete records (missing email addresses).
+
+Exports a strictly formatted v2_ready_leads.csv for immediate ingestion.
+
+To run the pipeline:
+python migrate_v1_to_v2.py old_v1_tracker.csv
+
