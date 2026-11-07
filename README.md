@@ -10,3 +10,16 @@ Agent 1 (Scraper & Verifier): Bypasses basic bot-protection to scrape prospect w
 Agents 2 & 3 (NLP Qualifier & Copywriter): Analyzes scraped context to identify buying signals and drafts highly personalized, 3-sentence cold emails.
 
 Agents 4 & 5 (Integration): Pushes approved email copy directly into Gmail Drafts and triggers an automated status notification via MailApp.
+
+📊 V1 Analytics Dashboard (Included)
+I built a local Python web application using streamlit and pandas to visualize the historical outreach data from my V1 manual tracker.
+
+Parses legacy CSV exports.
+
+Calculates total API cost savings.
+
+Visualizes pipeline velocity over time.
+
+To run locally:
+pip install -r requirements.txt
+streamlit run app.py
