@@ -5,47 +5,45 @@ from typing import Optional
 import pandas as pd
 import streamlit as st
 
+# Import the new UI components from the file you just created
+from lead_tier_section import render_lead_tier_section
+
 # Adjust this estimate to reflect your own API cost per drafted email.
 SAVINGS_PER_DRAFT_USD = 0.01
 
-REQUIRED_COLUMNS = {
-    "Company",
-    "Scraped Context",
-    "Email Draft",
-    "Pipeline Status",
-    "Date",
-}
-
 def load_csv(uploaded_file) -> pd.DataFrame:
-    """Read an uploaded CSV and verify its required columns."""
+    """Read an uploaded CSV and normalize columns."""
     df = pd.read_csv(uploaded_file)
     df.columns = df.columns.str.strip()
-
-    missing_columns = REQUIRED_COLUMNS - set(df.columns)
-    if missing_columns:
-        raise ValueError(
-            "The CSV is missing required column(s): "
-            + ", ".join(sorted(missing_columns))
-        )
-
+    
+    # We only strictly require 'Company' now, allowing the dashboard 
+    # to handle both old V1 trackers and new V2 prioritized pipelines.
+    if "Company" not in df.columns:
+        raise ValueError("The CSV must contain at least a 'Company' column.")
+        
     return df
 
 def prepare_data(df: pd.DataFrame) -> pd.DataFrame:
     """Normalize dates and identify rows with drafted emails."""
     prepared = df.copy()
-    prepared["Date"] = pd.to_datetime(prepared["Date"], errors="coerce")
-
+    
+    if "Date" in prepared.columns:
+        prepared["Date"] = pd.to_datetime(prepared["Date"], errors="coerce")
+        
     # Treat non-empty email draft values as drafted emails.
-    prepared["_has_email_draft"] = (
-        prepared["Email Draft"].fillna("").astype(str).str.strip().ne("")
-    )
-
+    if "Email Draft" in prepared.columns:
+        prepared["_has_email_draft"] = (
+            prepared["Email Draft"].fillna("").astype(str).str.strip().ne("")
+        )
+    else:
+        prepared["_has_email_draft"] = False
+        
     return prepared
 
 def render_metrics(df: pd.DataFrame) -> None:
     """Show the main outreach metrics."""
     total_leads = len(df)
-    total_drafts = int(df["_has_email_draft"].sum())
+    total_drafts = int(df["_has_email_draft"].sum()) if "_has_email_draft" in df.columns else 0
     estimated_savings = total_drafts * SAVINGS_PER_DRAFT_USD
 
     col1, col2, col3 = st.columns(3)
@@ -55,6 +53,10 @@ def render_metrics(df: pd.DataFrame) -> None:
 
 def render_leads_chart(df: pd.DataFrame) -> None:
     """Display daily lead counts for rows with valid dates."""
+    if "Date" not in df.columns:
+        st.info("ℹ️ No 'Date' column found in this pipeline export. Chronological chart hidden.")
+        return
+        
     dated_rows = df.dropna(subset=["Date"])
 
     if dated_rows.empty:
@@ -79,19 +81,16 @@ def main() -> None:
         layout="wide",
     )
 
-    st.title("GTM Outreach Analytics")
-    st.caption("A quick view of lead processing and email drafting activity.")
+    st.title("GTM Outreach Analytics & ICP Prioritization")
+    st.caption("A live view of autonomous lead processing, api cost savings, and RevOps pipeline tiering.")
 
     with st.sidebar:
         st.header("How to use")
         st.markdown(
             """
-            1. Export your Google Sheets tracker as a CSV file.
-            2. Upload the CSV below.
-            3. Review the metrics and leads-by-date chart.
-
-            **Expected columns:** `Company`, `Scraped Context`,
-            `Email Draft`, `Pipeline Status`, and `Date`.
+            1. Run the terminal orchestrator: `python run_engine.py`
+            2. Upload the resulting `v2_prioritized_leads.csv` below.
+            3. Action the Tier 1 Hot Leads directly from the dashboard.
             """
         )
         st.divider()
@@ -103,7 +102,7 @@ def main() -> None:
     uploaded_file = st.file_uploader(
         "Upload your GTM tracker CSV",
         type=["csv"],
-        help="Upload a CSV exported from your outreach tracker.",
+        help="Upload the prioritized CSV exported from your RevOps pipeline.",
     )
 
     if uploaded_file is None:
@@ -119,9 +118,14 @@ def main() -> None:
 
     render_metrics(df)
     st.divider()
+    
+    # Render the original chronological chart (gracefully degrades if no Date column)
     render_leads_chart(df)
+    
+    # Render the NEW RevOps Lead Tier Section (gracefully degrades if no Score column)
+    render_lead_tier_section(df)
 
-    with st.expander("Preview uploaded data"):
+    with st.expander("Preview raw pipeline data"):
         st.dataframe(raw_df.head(100), use_container_width=True)
 
 if __name__ == "__main__":
