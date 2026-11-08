@@ -41,3 +41,17 @@ Exports a strictly formatted v2_ready_leads.csv for immediate ingestion.
 To run the pipeline:
 python migrate_v1_to_v2.py old_v1_tracker.csv
 
+🎯 ICP Lead Scoring Engine (RevOps)
+Scraping thousands of leads is easy; knowing which 10 to call first is how operations drives revenue. I engineered an object-oriented Lead Scoring algorithm to automatically grade and prioritize prospects based on intent.
+
+Features:
+
+Dynamic Intent Dictionary: Awards points for high-intent B2B triggers (e.g., 'Founder', 'Raised Funding', 'Scaling') and penalizes negative-intent keywords.
+
+Automated Tiering: Segments the outbound pipeline into Tier 1 (Hot), Tier 2 (Warm), and Tier 3 (Cold).
+
+Stable Sorting: Exports a strictly prioritized v2_prioritized_leads.csv so sales teams always engage the highest-converting prospects first.
+
+To run the engine:
+python lead_scorer.py v2_ready_leads.csv
+
